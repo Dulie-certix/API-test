@@ -18,7 +18,7 @@ import {
   DialogTrigger,
 } from "../../components/ui/dialog";
 import { Plus } from "lucide-react";
-import { UserViewDialog } from "./userViweCard";
+import { UserViewDialog } from "./userViewCard";
 import { UserForm } from "./userForm";
 
 export default function UserPage() {

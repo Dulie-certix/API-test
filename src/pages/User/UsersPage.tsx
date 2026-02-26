@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { UserForm } from "./userForm";
-import { UserViewCard } from "./userViweCard";
+import { UserViewCard } from "./userViewCard";
 import { getAllUsers } from "@/apis/userService";
 
 export default function UsersPage() {

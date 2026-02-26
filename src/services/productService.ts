@@ -1,4 +1,4 @@
-import axios from "../libs/axios";
+import axios from "../lib/axios";
 import toast from "react-hot-toast";
 import {
   showSuccessNotification,
