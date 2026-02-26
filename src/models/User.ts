@@ -12,6 +12,7 @@ export interface IUser extends Document {
   gender?: string;
   phone?: string;
   username?: string;
+  image?: string;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -26,7 +27,8 @@ const userSchema = new Schema<IUser>({
   age: { type: Number },
   gender: { type: String },
   phone: { type: String },
-  username: { type: String }
+  username: { type: String },
+  image: { type: String }
 }, {
   timestamps: true
 });
@@ -43,5 +45,6 @@ userSchema.pre('save', async function() {
 userSchema.methods.comparePassword = async function(candidatePassword: string): Promise<boolean> {
   return bcrypt.compare(candidatePassword, this.password);
 };
+
 
 export const User = mongoose.model<IUser>('User', userSchema);

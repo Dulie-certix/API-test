@@ -13,6 +13,7 @@ interface UserData {
   phone: string;
   username: string;
   password?: string;
+  image?: string;
 }
 
 const getAuthHeaders = (): Record<string, string> => {
@@ -21,15 +22,12 @@ const getAuthHeaders = (): Record<string, string> => {
 };
 
 export const saveUser = async (
-  userData: UserData,
+  userData: FormData,
 ): Promise<{ success: boolean; message: string }> => {
   try {
     const response = await fetch("http://localhost:5000/api/users", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(userData),
+      body: userData,
     });
 
     if (!response.ok) {
@@ -55,16 +53,13 @@ export const saveUser = async (
 
 export const updateUser = async (
   id: string,
-  userData: Partial<UserData>,
+  userData: FormData,
 ): Promise<{ success: boolean; message: string }> => {
   try {
     const response = await fetch(`http://localhost:5000/api/users/${id}`, {
       method: "PATCH",
       credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(userData),
+      body: userData,
     });
 
     if (!response.ok) {

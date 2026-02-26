@@ -8,7 +8,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Loader2, Upload, X } from "lucide-react";
 import { saveUser, updateUser } from "@/apis/userService";
 import { userSchema, type UserFormData } from "@/lib/validations";
 import type { User } from "./userTable";
@@ -25,15 +25,16 @@ export function UserForm({
 	editUser,
 	isEditing = false,
 }: UserFormProps) {
-	const [showPassword, setShowPassword] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [errors, setErrors] = useState<Record<string, string>>({});
 	const [successMessage, setSuccessMessage] = useState<string>("");
 	const [submitError, setSubmitError] = useState<string>("");
+	const [imageFile, setImageFile] = useState<File | null>(null);
+	const [imagePreview, setImagePreview] = useState<string>("");
 	const [user, setUser] = useState<UserFormData>({
 		firstName: "",
 		lastName: "",
-		age: 18,
+		age: 0,
 		gender: "male",
 		email: "",
 		phone: "",
@@ -47,34 +48,73 @@ export function UserForm({
 			setUser({
 				firstName: editUser.firstName || "",
 				lastName: editUser.lastName || "",
-				age: editUser.age || 18,
+				age: editUser.age || 0,
 				gender: (editUser.gender as "male" | "female") || "male",
 				email: editUser.email || "",
 				phone: editUser.phone || "",
 				username: editUser.username || "",
-				password: "", // Always start with empty password for security
+				password: "",
 			});
+			if (editUser.image) {
+				setImagePreview(editUser.image);
+			}
 		} else {
-			// Reset form for new user
 			setUser({
 				firstName: "",
 				lastName: "",
-				age: 18,
+				age: 0,
 				gender: "male",
 				email: "",
 				phone: "",
 				username: "",
 				password: "",
 			});
+			setImagePreview("");
+			setImageFile(null);
 		}
-		setErrors({}); // Clear any previous errors
-		setSuccessMessage(""); // Clear any previous success messages
+		setErrors({});
+		setSuccessMessage("");
 	}, [isEditing, editUser]);
+
+	const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (file) {
+			if (!file.type.startsWith("image/")) {
+				setErrors((prev) => ({
+					...prev,
+					image: "Only image files are allowed",
+				}));
+				return;
+			}
+			if (file.size > 5 * 1024 * 1024) {
+				setErrors((prev) => ({
+					...prev,
+					image: "Image size must be less than 5MB",
+				}));
+				return;
+			}
+			setImageFile(file);
+			const reader = new FileReader();
+			reader.onloadend = () => {
+				setImagePreview(reader.result as string);
+			};
+			reader.readAsDataURL(file);
+			setErrors((prev) => {
+				const newErrors = { ...prev };
+				delete newErrors.image;
+				return newErrors;
+			});
+		}
+	};
+
+	const removeImage = () => {
+		setImageFile(null);
+		setImagePreview("");
+	};
 
 	const validateField = (fieldName: keyof UserFormData, value: any) => {
 		try {
-			if (fieldName === "password" && isEditing && !value) {
-				// Skip password validation for editing if empty
+			if (fieldName === "password") {
 				return true;
 			}
 
@@ -103,14 +143,9 @@ export function UserForm({
 
 	const validateForm = () => {
 		try {
-			// For editing, make password optional if it's empty
-			if (isEditing && !user.password) {
-				const { password, ...userWithoutPassword } = user;
-				const editSchema = userSchema.omit({ password: true });
-				editSchema.parse(userWithoutPassword);
-			} else {
-				userSchema.parse(user);
-			}
+			const { password, ...userWithoutPassword } = user;
+			const editSchema = userSchema.omit({ password: true });
+			editSchema.parse(userWithoutPassword);
 			setErrors({});
 			return true;
 		} catch (error: any) {
@@ -135,45 +170,49 @@ export function UserForm({
 		}
 
 		setLoading(true);
-		setErrors({}); // Clear any previous errors
+		setErrors({});
 
 		try {
-			const userData: any = {
-				firstName: user.firstName?.trim(),
-				lastName: user.lastName?.trim(),
-				age: Number(user.age) || 18,
-				gender: user.gender,
-				email: user.email?.trim(),
-				phone: user.phone?.trim(),
-				username: user.username?.trim(),
-				password: user.password,
-			};
+			const formData = new FormData();
+			formData.append("firstName", user.firstName?.trim());
+			formData.append("lastName", user.lastName?.trim());
+			formData.append("age", String(user.age || 18));
+			formData.append("gender", user.gender);
+			formData.append("email", user.email?.trim());
+			formData.append("phone", user.phone?.trim());
+			formData.append("username", user.username?.trim());
+			if (imageFile) {
+				console.log('📸 Image file:', imageFile.name, imageFile.size, 'bytes');
+				formData.append("image", imageFile);
+			} else {
+				console.log('⚠️ No image file');
+			}
 
-			console.log("🔄 Sending user data:", userData);
+			console.log("🔄 Sending user data...");
 
 			if (isEditing && editUser) {
-				if (!user.password) delete userData.password;
 				console.log(`📝 Updating user ${editUser._id}...`);
-				const result = await updateUser(editUser._id, userData);
+				const result = await updateUser(editUser._id, formData);
 				console.log("✅ User updated", result);
 			} else {
 				console.log("➕ Creating new user...");
-				const result = await saveUser(userData);
+				const result = await saveUser(formData);
 				console.log("✅ User created", result);
 			}
 
-			// Reset form for new users only
 			if (!isEditing) {
 				setUser({
 					firstName: "",
 					lastName: "",
-					age: 18,
+					age: 0,
 					gender: "male",
 					email: "",
 					phone: "",
 					username: "",
 					password: "",
 				});
+				setImageFile(null);
+				setImagePreview("");
 			}
 
 			setSuccessMessage(
@@ -212,6 +251,47 @@ export function UserForm({
 			)}
 
 			<div>
+				<label className="block text-sm font-medium text-gray-300 mb-2">
+					Profile Image
+				</label>
+				<div className="flex items-center gap-4">
+					{imagePreview && (
+						<div className="relative">
+							<img
+								src={imagePreview}
+								alt="Preview"
+								className="w-20 h-20 rounded-full object-cover border-2 border-gray-700"
+							/>
+							<button
+								type="button"
+								onClick={removeImage}
+								aria-label="Remove image"
+								className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1 hover:bg-red-600">
+								<X size={14} />
+							</button>
+						</div>
+					)}
+					<label className="cursor-pointer">
+						<div className="flex items-center gap-2 px-4 py-2 bg-gray-800 border border-gray-700 rounded-md hover:bg-gray-700 transition-colors">
+							<Upload size={16} className="text-gray-400" />
+							<span className="text-sm text-gray-300">
+								{imagePreview ? "Change Image" : "Upload Image"}
+							</span>
+						</div>
+						<input
+							type="file"
+							accept="image/*"
+							onChange={handleImageChange}
+							className="hidden"
+						/>
+					</label>
+				</div>
+				{errors.image && (
+					<p className="text-red-400 text-sm mt-1">{errors.image}</p>
+				)}
+			</div>
+
+			<div>
 				<Input
 					placeholder="First Name"
 					value={user.firstName}
@@ -245,7 +325,7 @@ export function UserForm({
 					placeholder="Age"
 					value={user.age}
 					onChange={(e) =>
-						handleFieldChange("age", Number(e.target.value) || 18)
+						handleFieldChange("age", Number(e.target.value))
 					}
 					className={`bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 ${
 						errors.age ? "border-red-500" : ""
@@ -322,33 +402,6 @@ export function UserForm({
 				/>
 				{errors.username && (
 					<p className="text-red-400 text-sm mt-1">{errors.username}</p>
-				)}
-			</div>
-
-			<div>
-				<div className="relative">
-					<Input
-						type={showPassword ? "text" : "password"}
-						placeholder={
-							isEditing ? "Password (leave empty to keep current)" : "Password"
-						}
-						value={user.password}
-						onChange={(e) => handleFieldChange("password", e.target.value)}
-						className={`bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 pr-10 ${
-							errors.password ? "border-red-500" : ""
-						}`}
-					/>
-					<button
-						type="button"
-						onClick={() => setShowPassword(!showPassword)}
-						className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400 hover:text-gray-300">
-						{showPassword ?
-							<EyeOff size={16} />
-						:	<Eye size={16} />}
-					</button>
-				</div>
-				{errors.password && (
-					<p className="text-red-400 text-sm mt-1">{errors.password}</p>
 				)}
 			</div>
 

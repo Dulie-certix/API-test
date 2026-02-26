@@ -4,6 +4,7 @@ import {
   Users,
   Settings,
   HelpCircle,
+  MessageSquare,
 } from "lucide-react";
 
 export interface NavItem {
@@ -29,6 +30,11 @@ export const navItems: NavItem[] = [
     path: "users",
   },
   {
+    title: "Complaints",
+    icon: MessageSquare,
+    path: "complaints",
+  },
+  {
     title: "Settings",
     icon: Settings,
     path: "settings",
@@ -40,5 +46,5 @@ export const navItems: NavItem[] = [
   },
 ];
 
-export const mainNavItems = navItems.slice(0, 3);
-export const bottomNavItems = navItems.slice(3);
+export const mainNavItems = navItems.slice(0, 4);
+export const bottomNavItems = navItems.slice(4);

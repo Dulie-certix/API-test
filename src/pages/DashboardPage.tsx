@@ -4,6 +4,8 @@ import { Layout } from '@/components/Layout';
 import Dashboard from './Dashboard';
 import ProductsPage from './Products/ProductsPage';
 import UsersPage from './User/UsersPage';
+import ComplaintsPage from './Complaints/ComplaintsPage';
+import AdminComplaintsPage from './Complaints/AdminComplaintsPage';
 import { AuthUser } from '@/types/auth';
 
 const DashboardPage = () => {
@@ -26,6 +28,8 @@ const DashboardPage = () => {
         return <ProductsPage />;
       case 'users':
         return <UsersPage />;
+      case 'complaints':
+        return user.role === 'admin' ? <AdminComplaintsPage /> : <ComplaintsPage />;
       default:
         return <Dashboard searchQuery={searchQuery} />;
     }

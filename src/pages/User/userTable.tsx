@@ -36,6 +36,7 @@ export type User = {
   phone: string;
   username: string;
   password: string;
+  image?: string;
 };
 
 export const createUserColumns = (
@@ -195,7 +196,18 @@ export const createUserColumns = (
                 <div className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-xl p-4 shadow-sm">
                   <div className="flex items-center space-x-4">
                     <div className="relative">
-                      <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-lg shadow-md border-2 border-white">
+                      {user.image ? (
+                        <img
+                          src={user.image}
+                          alt={`${user.firstName} ${user.lastName}`}
+                          className="w-16 h-16 rounded-full object-cover shadow-md border-2 border-white"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                      ) : null}
+                      <div className={`w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-lg shadow-md border-2 border-white ${user.image ? 'hidden' : ''}`}>
                         {user.firstName.charAt(0)}
                         {user.lastName.charAt(0)}
                       </div>

@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Link } from "react-router"
 
 interface LoginFormProps extends React.ComponentProps<"form"> {
   loading?: boolean;
@@ -59,6 +60,17 @@ export function LoginForm({
 					{loading ? "Logging in..." : "Login"}
 				</Button>
 			</form>
+
+			<div className="mt-4 text-center">
+				<p className="text-gray-400 text-sm mb-3">
+					Don't have an account?
+					<Link
+						to="/register"
+						className="block text-sm text-orange-500 hover:text-orange-600 font-medium underline">
+						Register Now
+					</Link>
+				</p>
+			</div>
 		</div>
 	);
 }

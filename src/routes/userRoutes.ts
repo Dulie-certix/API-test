@@ -3,17 +3,49 @@ import type { Request, Response } from "express";
 import { User } from "../models/User";
 import mongoose from "mongoose";
 import { authenticateToken, requireAdmin } from "../middleware/auth";
+import { uploadToS3, uploadFileToS3 } from "../middleware/s3Upload";
+import { generatePassword } from "../utils/generatePassword";
+import { sendPasswordEmail } from "../services/emailService";
 
 const router = express.Router();
 
-router.post("/", async (req: Request, res: Response) => {
+router.post("/", uploadToS3.single('image'), async (req: Request, res: Response) => {
   try {
     if (mongoose.connection.readyState !== 1) {
       return res.status(503).json({ error: "Database not connected" });
     }
-    const user = await User.create(req.body);
+
+    console.log('📸 Image file received:', req.file ? 'Yes' : 'No');
+    
+    let imageUrl = '';
+    if (req.file) {
+      console.log('⬆️ Uploading to S3...');
+      imageUrl = await uploadFileToS3(req.file);
+      console.log('✅ S3 URL:', imageUrl);
+    }
+
+    const generatedPassword = generatePassword(6);
+    
+    const userData = {
+      ...req.body,
+      password: generatedPassword,
+      ...(imageUrl && { image: imageUrl })
+    };
+
+    console.log('💾 Saving user with auto-generated password');
+    const user = await User.create(userData);
+    console.log('✅ User saved with ID:', user._id);
+    
+    try {
+      await sendPasswordEmail(user.email, user.firstName, generatedPassword);
+      console.log('📧 Password email sent to:', user.email);
+    } catch (emailError) {
+      console.error('⚠️ Failed to send email:', emailError);
+    }
+    
     res.json(user);
   } catch (error) {
+    console.error('❌ Error creating user:', error);
     res.status(400).json({
       error: error instanceof Error ? error.message : "Unknown error",
     });
@@ -60,7 +92,7 @@ router.get("/", authenticateToken, async (_req: Request, res: Response) => {
   }
 });
 
-router.patch("/:id", authenticateToken, async (req: Request, res: Response) => {
+router.patch("/:id", authenticateToken, uploadToS3.single('image'), async (req: Request, res: Response) => {
   try {
     if (mongoose.connection.readyState !== 1) {
       return res.status(503).json({ error: "Database not connected" });
@@ -68,7 +100,11 @@ router.patch("/:id", authenticateToken, async (req: Request, res: Response) => {
     
     const updateData = { ...req.body };
     
-    // Don't update password if it's empty or undefined
+    if (req.file) {
+      const imageUrl = await uploadFileToS3(req.file);
+      updateData.image = imageUrl;
+    }
+    
     if (!updateData.password) {
       delete updateData.password;
     }

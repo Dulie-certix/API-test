@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider, Navigate } from "react-router";
-import Login from "./pages/Login/Login";
+import Login from "../src/pages/Login/login"
+import Register from "../src/pages/Login/Register.tsx"
 import DashboardPage from "./pages/DashboardPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -11,6 +12,10 @@ const router = createBrowserRouter([
 	{
 		path: "/login",
 		element: <Login />,
+	},
+	{
+		path: "/register",
+		element: <Register />,
 	},
 	{
 		path: "/dashboard",
